@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071a29">
+<title>Deep Blue — Naval Duel</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #071a29;
+  --text: #edfaff;
+  --muted: #a2bdce;
+  --line: #34586d;
+  --cyan: #77f3de;
+  --gold: #ffdb89;
+  --red: #ffad9e;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at top left,#17465b,transparent 60%),
+    radial-gradient(ellipse at bottom right,#113c4b,transparent 60%),
+    var(--bg);
+  font: 16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+}
+button,input { font: inherit; }
+button {
+  min-height: 44px;
+  padding: 10px 15px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: var(--cyan);
+  color: #063138;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:hover:not(:disabled) { filter: brightness(1.12); }
+button:disabled { opacity: .45; cursor: default; }
+button.secondary {
+  background: #193b50;
+  border-color: #477087;
+  color: var(--text);
+}
+button.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+}
+button.gold { background: var(--gold); color: #342509; }
+button:focus-visible,input:focus-visible,summary:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+input:not([type=range]) {
+  min-height: 45px;
+  padding: 10px 12px;
+  border: 1px solid #567b90;
+  border-radius: 10px;
+  background: #071d2c;
+  color: var(--text);
+}
+input[type=range] { width: 80px; accent-color: var(--cyan); }
+h1,h2,h3,p { margin-top: 0; }
+h1 { margin-bottom: 0; font-size: 27px; letter-spacing: .07em; }
+h2 { line-height: 1.2; }
+h3 { margin-bottom: 0; font-size: 18px; }
+small,.muted { color: var(--muted); }
+header,main,footer { width: min(1160px,100%); margin: auto; }
+header { padding: 22px 18px 14px; }
+main { padding: 5px 18px 25px; }
+footer { padding: 0 18px 25px; text-align: center; font-size: 12px; color: var(--muted); }
+.row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.between { justify-content: space-between; }
+.eyebrow {
+  color: var(--cyan);
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.brand p { margin: 0; }
+.controls { gap: 7px; }
+.controls button { min-height: 39px; padding: 8px 10px; font-size: 12px; }
+.volume { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.panel {
+  padding: 19px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(145deg,#13374bef,#0a2234f5);
+  box-shadow: 0 14px 36px #0003;
+}
+.pill {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  color: var(--muted);
+  font-size: 12px;
+}
+#lobby { max-width: 760px; margin: 18px auto; padding: 30px; }
+#lobby h2 { margin: 12px 0; font-size: clamp(32px,6vw,48px); }
+#lobby .intro { max-width: 54ch; color: var(--muted); }
+.lobby-actions { margin: 24px 0 17px; }
+.lobby-actions button { flex: 1 1 160px; }
+.inset {
+  margin-top: 17px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #071a2c88;
+}
+#joinCode { flex: 1; width: 140px; text-transform: uppercase; }
+#roomCode {
+  width: 235px;
+  text-align: center;
+  font: 800 28px ui-monospace,monospace;
+  letter-spacing: .15em;
+}
+#connectionMessage { margin: 16px 0 0; color: var(--muted); }
+#connectionMessage.error { color: var(--red); }
+details { margin-top: 16px; }
+summary { cursor: pointer; }
+details p { margin: 10px 0 0; color: var(--muted); }
+.session-bar { margin: 4px 0 12px; }
+.turn-banner {
+  position: sticky;
+  top: 7px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 94px;
+  padding: 15px 18px;
+  margin-bottom: 16px;
+  border: 2px solid #4d7187;
+  border-radius: 16px;
+  background: #0d293af7;
+  box-shadow: 0 10px 28px #0006;
+}
+.turn-icon {
+  flex: 0 0 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 25px;
+}
+.turn-copy { flex: 1; min-width: 0; }
+.turn-copy h2 { margin: 0 0 3px; font-size: clamp(18px,3vw,26px); }
+.turn-copy p { margin: 0; font-size: 12px; }
+.turn-banner.mine { color: var(--cyan); border-color: var(--cyan); background: #083b3ff7; }
+.turn-banner.mine .turn-icon { animation: beacon 2s ease-in-out infinite; }
+.turn-banner.wait { color: var(--gold); border-color: #b58b57; background: #322d23f7; }
+.turn-banner.flight { color: #fbe8b6; border-color: var(--gold); background: #383321f7; }
+.turn-banner.won { color: var(--gold); border-color: var(--gold); }
+.turn-banner.lost { color: var(--red); border-color: var(--red); }
+#jumpButton { white-space: nowrap; }
+#networkWarning {
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #b79457;
+  border-radius: 11px;
+  color: var(--gold);
+  background: #46391f99;
+}
+.scoreboard { margin-bottom: 17px; }
+.scoreboard-heading { margin-bottom: 14px; }
+.scoreboard-heading p { margin: 3px 0 0; font-size: 12px; }
+.scorecards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.score-card {
+  padding: 15px;
+  border: 1px solid #345b71;
+  border-radius: 14px;
+  background: #061d2c99;
+}
+.score-card.active { border-color: var(--cyan); box-shadow: inset 0 0 25px #77f3de0b; }
+.score-card.winner { border-color: var(--gold); }
+.card-name { font-size: 12px; font-weight: 900; letter-spacing: .1em; }
+.card-state { font-size: 10px; color: var(--muted); }
+.score-card.active .card-state { color: var(--cyan); }
+.win-total { display: flex; align-items: baseline; gap: 10px; margin: 4px 0 11px; }
+.win-total strong { font-size: clamp(42px,6vw,62px); line-height: 1.1; color: var(--gold); }
+.win-total span { color: var(--muted); font-size: 13px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.stat-grid div { display: flex; flex-direction: column; }
+.stat-grid b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.stat-grid span { color: var(--muted); font-size: 10px; }
+.card-foot,.score-note { margin: 11px 0 0; font-size: 11px; color: var(--muted); }
+.table-wrap { overflow-x: auto; margin-top: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th,td { padding: 8px; text-align: left; border-bottom: 1px solid #2b4b5d; }
+th { color: var(--muted); }
+.result-win { color: var(--cyan); }
+.result-loss { color: var(--red); }
+#exportButton { min-height: 38px; padding: 7px 10px; font-size: 12px; }
+.result-panel { text-align: center; margin-bottom: 17px; border-color: #8e7b4f; }
+.result-panel h2 { margin-bottom: 8px; }
+.result-medal { font-size: 43px; }
+.result-panel p { color: var(--muted); }
+#rematchButton { min-width: 205px; }
+.boards { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+.board-panel { min-width: 0; padding: 16px; scroll-margin-top: 125px; }
+.board-heading { margin-bottom: 12px; }
+.board-heading small { font-size: 12px; }
+.board-panel.firing { border-color: var(--cyan); box-shadow: 0 0 28px #77f3de1b; }
+.board-panel.firing h3 { color: var(--cyan); }
+.board-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #061b29;
+}
+.scanner {
+  position: absolute;
+  inset: -45%;
+  background: conic-gradient(transparent 285deg,#77f3de32 359deg,transparent 360deg);
+  animation: scan 11s linear infinite;
+  pointer-events: none;
+}
+.board {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 18px repeat(10,minmax(0,1fr));
+  gap: 3px;
+  padding: 5px;
+}
+.axis { display: grid; place-items: center; min-height: 17px; font-size: 10px; color: var(--muted); }
+.cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid #365f7580;
+  border-radius: 5px;
+  background: #15364acd;
+  color: var(--text);
+  overflow: hidden;
+}
+.cell::before { content: ""; display: block; padding-top: 100%; }
+.cell span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(14px,2vw,23px);
+  font-weight: 900;
+  pointer-events: none;
+}
+.cell:disabled { opacity: 1; }
+.cell:not(:disabled):hover { background-color: #285567; }
+.cell.hull { background: linear-gradient(135deg,#527d91,#2a5066); border-color: #a0bdca; }
+.cell.selected-hull { border-color: var(--gold); box-shadow: inset 0 0 12px #ffdb8935; }
+.cell.miss { background: #102f43; color: #8dcbe0; }
+.cell.hit {
+  color: #ffe2a3;
+  background: radial-gradient(circle,#bd7946,#6b3a30 55%,#302d36);
+  border-color: #eab078;
+  animation: embers 3s ease-in-out infinite;
+}
+.cell.sunk { color: #d1a599; background: #413037; border-color: #84535c; animation: none; }
+.cell.revealed { color: var(--gold); border: 2px solid var(--gold); background: #655029; }
+.cell.aimed { border: 2px solid var(--cyan); background: #226466; color: var(--cyan); }
+.cell.preview-good {
+  background: #257a64 !important;
+  border: 2px solid #95ffcf !important;
+  color: #e5fff1;
+}
+.cell.preview-bad {
+  background: #843f49 !important;
+  border: 2px dashed #ffb2b2 !important;
+  color: #fff0f0;
+}
+.cell.incoming { outline: 2px solid var(--gold); outline-offset: -3px; }
+.target-row { margin-top: 13px; }
+#targetLabel { flex: 1; font-size: 12px; color: var(--muted); }
+#fireButton { min-width: 138px; }
+.legend { margin: 10px 0 0; font-size: 11px; color: var(--muted); }
+.gold-text { color: var(--gold); }
+.placement-header { margin-bottom: 10px; }
+.placement-header p { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
+.setup-actions { margin-bottom: 12px; }
+.setup-actions button { padding: 8px 10px; font-size: 12px; }
+#manualControls { margin-bottom: 12px; }
+#shipPicker { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 5px; }
+.ship-chip {
+  min-height: 70px;
+  min-width: 0;
+  padding: 7px 3px;
+  background: #0b293c;
+  border-color: #3b6074;
+  color: var(--muted);
+  font-size: 10px;
+}
+.ship-chip.selected { color: var(--gold); border-color: var(--gold); background: #463c2380; }
+.ship-chip.placed { color: #b5e8de; }
+.ship-chip span { display: block; }
+.miniature { display: flex !important; justify-content: center; gap: 2px; margin: 6px 0; }
+.miniature i { width: 8px; height: 9px; background: currentColor; border-radius: 2px; }
+.ship-chip small { font-size: 9px; }
+#placementStatus {
+  min-height: 38px;
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+#placementStatus.good { color: #a4ffcf; }
+#placementStatus.bad { color: var(--red); }
+.placement-confirm { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+.placement-confirm button { font-size: 12px; }
+progress { width: 100%; height: 7px; accent-color: var(--cyan); }
+#readyRow { margin-top: 13px; }
+#readyButton { width: 100%; }
+#readyButton.complete { box-shadow: 0 0 22px #77f3de2c; }
+.log-panel { margin-top: 17px; }
+#battleLog { padding-left: 21px; margin: 11px 0 0; color: var(--muted); font-size: 13px; }
+#battleLog li { padding: 4px 0; }
+#battleLog li:first-child { color: var(--text); }
+.local-fx { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.fx-shell {
+  position: absolute;
+  width: 22px;
+  height: 6px;
+  border-radius: 99px;
+  background: linear-gradient(90deg,#ffd98b00,#ffd98b 55%,#fff8dd);
+  box-shadow: 0 0 12px #ffd98b, -10px 0 17px #ffbb5744;
+}
+.fx-ring { position: absolute; width: 24px; height: 24px; border: 2px solid; border-radius: 50%; }
+.fx-spark { position: absolute; width: 5px; height: 5px; border-radius: 50%; }
+.fx-smoke { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #82929b; filter: blur(3px); }
+.fx-word {
+  position: absolute;
+  width: 190px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-shadow: 0 2px 8px #000,0 0 13px #000;
+}
+#celebration { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+.confetti { position: absolute; width: 8px; height: 13px; border-radius: 2px; }
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 50;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 25px);
+  padding: 12px 17px;
+  border: 1px solid #628b9d;
+  border-radius: 13px;
+  background: #09273af5;
+  color: var(--text);
+  box-shadow: 0 10px 30px #0008;
+  font-size: 13px;
+  text-align: center;
+  pointer-events: none;
+}
+#diagnostic {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 100;
+  padding: 14px;
+  max-height: 30vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  border: 2px solid var(--red);
+  border-radius: 10px;
+  background: #30202b;
+  font: 12px/1.5 monospace;
+}
+.no-fx *, .no-fx *::before { animation: none !important; transition: none !important; }
+.no-fx .scanner,.over .scanner { display: none; }
+@keyframes scan { to { transform: rotate(360deg); } }
+@keyframes beacon { 50% { box-shadow: 0 0 0 7px #77f3de16,0 0 20px #77f3de26; } }
+@keyframes embers { 50% { box-shadow: inset 0 0 12px #ffcf6940; } }
+@media(max-width:850px) {
+  .boards { grid-template-columns: 1fr; }
+  .placing #ownPanel { order: -1; }
+  .board-panel { width: 100%; max-width: 610px; margin: auto; }
+}
+@media(max-width:540px) {
+  header { padding: 15px 12px 10px; }
+  main { padding: 5px 10px 22px; }
+  .controls { width: 100%; justify-content: space-between; }
+  .panel { padding: 13px; }
+  #lobby { padding: 23px; }
+  .scorecards { gap: 8px; }
+  .score-card { padding: 10px; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .card-state { font-size: 9px; }
+  .turn-banner { top: 4px; padding: 11px; gap: 9px; }
+  .turn-icon { flex-basis: 32px; height: 32px; font-size: 20px; }
+  .turn-copy p { font-size: 11px; }
+  #jumpButton { padding: 8px; font-size: 11px; }
+  .board-panel { padding: 10px; }
+  .board { gap: 2px; grid-template-columns: 15px repeat(10,minmax(0,1fr)); }
+  .ship-chip { font-size: 9px; }
+  .miniature { gap: 1px; }
+  .miniature i { width: 6px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before { animation: none !important; transition: none !important; }
+  .scanner { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="row between">
+  <div class="brand">
+    <h1>◎ DEEP BLUE</h1>
+    <p class="eyebrow">Naval duel · Impact edition</p>
+  </div>
+  <div class="row controls">
+    <button id="soundButton" class="ghost" aria-pressed="false">Sound off</button>
+    <label class="volume">Volume
+      <input id="volumeSlider" type="range" min="0" max="100" value="45"
+             aria-label="Sound volume">
+    </label>
+    <button id="effectsButton" class="ghost" aria-pressed="true">Effects on</button>
+  </div>
+</header>
+
+<main>
+<section id="lobby" class="panel">
+  <span class="eyebrow">Welcome aboard, Captain</span>
+  <h2>Wait for the splash.<br>Then count the damage.</h2>
+  <p class="intro">
+    Deploy your fleet, hunt the enemy, and keep score across connected
+    rematches. Watch each shell land before its result is revealed.
+  </p>
+  <div class="row lobby-actions">
+    <button id="createButton">Create game</button>
+    <button id="showJoinButton" class="secondary">Join game</button>
+    <button id="soloButton" class="ghost">Play vs computer</button>
+  </div>
+
+  <div id="joinPane" class="inset" hidden>
+    <form id="joinForm">
+      <label for="joinCode">Your friend's six-character room code</label>
+      <div class="row" style="margin-top:9px">
+        <input id="joinCode" maxlength="12" autocomplete="off"
+               autocapitalize="characters" spellcheck="false"
+               placeholder="ABC234" required>
+        <button id="connectButton" type="submit">Connect</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="roomPane" class="inset" hidden>
+    <p>Send this code to your opponent:</p>
+    <div class="row">
+      <input id="roomCode" readonly aria-label="Your room code">
+      <button id="copyButton" class="secondary">Copy code</button>
+    </div>
+    <p class="muted" style="margin:12px 0 0">
+      Both devices must use this version. Keep both pages open.
+    </p>
+  </div>
+
+  <p id="connectionMessage" role="status">Initializing controls…</p>
+  <button id="cancelButton" class="ghost" style="margin-top:14px" hidden>Cancel</button>
+
+  <details>
+    <summary>How to play</summary>
+    <p>
+      Use the suggested fleet, shuffle it, or choose Place manually.
+      Manual placement guides you through all five ships.
+    </p>
+    <p>
+      Tap a starting square to preview the selected ship. Green means it
+      fits; red means it overlaps or leaves the board. Rotate if needed,
+      then press Place ship. The next ship is selected automatically.
+      Undo reverses your last placement.
+    </p>
+    <p>
+      To move a placed ship, choose it in the ship tray, preview a new
+      position, then confirm. You can also tap a ship after all five
+      have been placed.
+    </p>
+    <p>
+      When both captains are ready, take one shot per turn—even after a hit.
+      Select an enemy square, then Fire. Results appear after impact.
+    </p>
+    <p>
+      Sink all five ships to win. Enemy survivors are revealed in gold
+      at game over. Request rematches without reconnecting; the starting
+      player alternates.
+    </p>
+    <p>
+      Scores last for this session. Leaving or reloading starts a new
+      series. Export CSV to keep your results.
+    </p>
+  </details>
+</section>
+
+<section id="game" hidden>
+  <div class="row between session-bar">
+    <span id="sessionLabel" class="pill"></span>
+    <button id="leaveButton" class="ghost">Leave game</button>
+  </div>
+
+  <section id="turnBanner" class="turn-banner"
+           role="status" aria-live="polite" aria-atomic="true">
+    <div id="turnIcon" class="turn-icon" aria-hidden="true">⚓</div>
+    <div class="turn-copy">
+      <h2 id="turnTitle">Deploy your fleet</h2>
+      <p id="turnDetail"></p>
+    </div>
+    <button id="jumpButton" class="secondary" hidden>Aim ↓</button>
+  </section>
+
+  <div id="networkWarning" role="alert" hidden></div>
+
+  <section class="panel scoreboard">
+    <div class="row between scoreboard-heading">
+      <div>
+        <span id="roundLabel" class="eyebrow">Round 1</span>
+        <h3>Series scoreboard</h3>
+        <p id="seriesLead" class="muted"></p>
+      </div>
+      <button id="exportButton" class="secondary" disabled>Export CSV</button>
+    </div>
+
+    <div class="scorecards">
+      <article id="myCard" class="score-card">
+        <div class="row between">
+          <span class="card-name">YOU</span>
+          <span id="myState" class="card-state"></span>
+        </div>
+        <div class="win-total"><strong id="myWins">0</strong><span>wins</span></div>
+        <div class="stat-grid">
+          <div><b id="myShots">0</b><span>SHOTS</span></div>
+          <div><b id="myHits">0</b><span>HITS</span></div>
+          <div><b id="myAccuracy">—</b><span>ACCURACY</span></div>
+          <div><b id="myStreak">0</b><span>WIN STREAK</span></div>
+        </div>
+        <p id="myFoot" class="card-foot"></p>
+      </article>
+      <article id="theirCard" class="score-card">
+        <div class="row between">
+          <span id="opponentName" class="card-name">OPPONENT</span>
+          <span id="theirState" class="card-state"></span>
+        </div>
+        <div class="win-total"><strong id="theirWins">0</strong><span>wins</span></div>
+        <div class="stat-grid">
+          <div><b id="theirShots">0</b><span>SHOTS</span></div>
+          <div><b id="theirHits">0</b><span>HITS</span></div>
+          <div><b id="theirAccuracy">—</b><span>ACCURACY</span></div>
+          <div><b id="theirStreak">0</b><span>WIN STREAK</span></div>
+        </div>
+        <p id="theirFoot" class="card-foot"></p>
+      </article>
+    </div>
+
+    <p class="score-note">
+      Statistics update after impact. Wins and streaks count completed
+      rounds. Rematches keep your series score.
+    </p>
+    <details>
+      <summary id="historySummary">Match history · 0 completed</summary>
+      <p id="historyEmpty">Your first result will appear here.</p>
+      <div id="historyTableWrap" class="table-wrap" hidden>
+        <table>
+          <thead>
+            <tr><th>Round</th><th>Result</th><th>Your hits/shots</th><th>Enemy hits/shots</th></tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section id="resultPanel" class="panel result-panel" hidden>
+    <div id="resultMedal" class="result-medal" aria-hidden="true">🏆</div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultDetail"></p>
+    <button id="rematchButton" class="gold">New game</button>
+  </section>
+
+  <div id="boards" class="boards placing">
+    <article id="enemyPanel" class="panel board-panel">
+      <div class="row between board-heading">
+        <h3 id="enemyHeading">Enemy waters</h3>
+        <small id="enemyCount"></small>
+      </div>
+      <div id="enemyShell" class="board-shell">
+        <div class="scanner" aria-hidden="true"></div>
+        <div id="enemyBoard" class="board" aria-label="Enemy waters"></div>
+        <div id="enemyFx" class="local-fx" aria-hidden="true"></div>
+      </div>
+      <div class="row target-row">
+        <span id="targetLabel">Select a square, then Fire.</span>
+        <button id="fireButton" class="gold" disabled>FIRE</button>
+      </div>
+      <p class="legend">
+        × Hit &nbsp; • Miss &nbsp; <span class="gold-text">◆ Revealed survivor</span>
+      </p>
+    </article>
+
+    <article id="ownPanel" class="panel board-panel">
+      <div class="row between board-heading">
+        <h3>Your fleet</h3>
+        <small id="ownCount"></small>
+      </div>
+
+      <div id="placement">
+        <div class="placement-header">
+          <strong id="placementTitle">Your suggested fleet is ready</strong>
+          <p id="placementIntro">Keep it, shuffle it, or place your own ships.</p>
+          <progress id="placementProgress" max="5" value="5"
+                    aria-label="Ships placed"></progress>
+        </div>
+
+        <div class="row setup-actions">
+          <button id="manualButton" class="secondary">Place manually</button>
+          <button id="shuffleButton" class="secondary">Shuffle fleet</button>
+          <button id="undoButton" class="ghost" disabled>Undo</button>
+        </div>
+
+        <div id="manualControls" hidden>
+          <div id="shipPicker" aria-label="Choose a ship"></div>
+          <p id="placementStatus"></p>
+          <div class="placement-confirm">
+            <button id="rotateButton" class="secondary">Rotate ↔</button>
+            <button id="placeButton" class="gold" disabled>Place ship</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ownShell" class="board-shell">
+        <div id="ownBoard" class="board" aria-label="Your fleet"></div>
+        <div id="ownFx" class="local-fx" aria-hidden="true"></div>
+      </div>
+      <div id="readyRow">
+        <button id="readyButton">Use this fleet</button>
+      </div>
+      <p class="legend">▰ Your ship &nbsp; × Damage &nbsp; • Enemy miss</p>
+    </article>
+  </div>
+
+  <section class="panel log-panel">
+    <div class="row between">
+      <h3>Captain's log</h3>
+      <span class="eyebrow">Confirmed impacts</span>
+    </div>
+    <ol id="battleLog"></ol>
+  </section>
+</section>
+
+<noscript><p class="panel">JavaScript must be enabled to play Deep Blue.</p></noscript>
+</main>
+
+<footer>Five ships. One shot per turn. Same room, many battles.</footer>
+<div id="celebration" aria-hidden="true"></div>
+<div id="toast" role="status" hidden></div>
+<pre id="diagnostic" role="alert" hidden></pre>
+
+<script>
+(() => {
+"use strict";
+
+const $ = id => document.getElementById(id);
+const APP = "deep-blue-impact-5";
+const PREFIX = "deepblue-impact5-";
+const FLIGHT_MS = 760;
+const NAMES = ["Carrier","Battleship","Cruiser","Submarine","Destroyer"];
+const SIZES = [5,4,3,3,2];
+const LETTERS = "ABCDEFGHIJ";
+const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
+const copy = value => JSON.parse(JSON.stringify(value));
+const coord = i => LETTERS[i % 10] + (Math.floor(i / 10) + 1);
+const percentage = (hits,shots) => shots ? Math.round(hits / shots * 100) + "%" : "—";
+const emptyFleet = () => [[],[],[],[],[]];
+const emptyShots = () => Array(100).fill(0);
+
+let mode = "", room = "", seat = 0, connected = false, busy = false;
+let peer = null, connection = null, epoch = 0;
+let state = null, series = freshSeries(), view = null;
+let revision = 0, eventNumber = 0, acknowledgements = [0,0];
+let receivedRevision = 0, requestNumber = 0, pending = null;
+let pendingSince = 0, lastRetry = 0, lastHeard = 0;
+let slowConnection = false, disconnectReason = "";
+let networkTimer = 0, reconnectTimer = 0, aiTimer = 0, impactTimer = 0;
+let toastTimer = 0, libraryLoading = false, libraryCallbacks = [];
+
+let presentationQueue = [], presenting = false;
+let flownEvent = 0, shownEvent = 0, celebratedRound = 0;
+let activeFlightAnimation = null;
+
+let draft = emptyFleet(), manual = false, selectedShip = -1;
+let anchor = -1, vertical = false, target = -1, undoStack = [];
+const ownCells = [], enemyCells = [], shipButtons = [];
+
+let effectsEnabled = !motionPreference.matches;
+let soundEnabled = false, volume = .45;
+let audio = null, master = null, noiseBuffer = null;
+
+function freshSeries() {
+  return {
+    wins:[0,0], shots:[0,0], hits:[0,0], sinks:[0,0],
+    streak:[0,0], best:[0,0], history:[]
+  };
+}
+
+function report(error) {
+  $("diagnostic").hidden = false;
+  $("diagnostic").textContent = "Deep Blue diagnostic\n\n" +
+    String(error && error.message ? error.message : error).slice(0,900);
+}
+addEventListener("error", event => {
+  if (event.message) report(event.message + "\nLine " + event.lineno);
+});
+addEventListener("unhandledrejection", event => report(event.reason));
+
+const opponentName = () => mode === "solo" ? "Computer" : "Opponent";
+const fxOn = () => effectsEnabled && !motionPreference.matches;
+const canArrange = () => !!view && connected && !pending &&
+  view.phase === "place" && !view.ready[seat];
+const canShoot = () => !!view && connected && !pending &&
+  view.phase === "battle" && view.turn === seat;
+
+function toast(message, duration = 2800) {
+  clearTimeout(toastTimer);
+  $("toast").textContent = message;
+  $("toast").hidden = false;
+  toastTimer = setTimeout(() => $("toast").hidden = true, duration);
+}
+
+function later(fn, delay, round = null) {
+  const token = epoch;
+  setTimeout(() => {
+    if (token !== epoch) return;
+    if (round !== null && (!view || view.round !== round)) return;
+    fn();
+  }, delay);
+}
+
+function cellsFor(start, length, upright) {
+  if (!Number.isInteger(start) || start < 0 || start > 99) return null;
+  const r = Math.floor(start / 10), c = start % 10;
+  if (upright ? r + length > 10 : c + length > 10) return null;
+  return Array.from({length},(_,i) => start + i * (upright ? 10 : 1));
+}
+
+function fits(fleet, index, cells) {
+  return !!cells && fleet.every((ship,j) =>
+    j === index || cells.every(cell => !ship.includes(cell))
+  );
+}
+
+function randomFleet() {
+  const fleet = emptyFleet();
+  for (let s = 0; s < 5; s++) {
+    let placed = false;
+    for (let attempt = 0; attempt < 400; attempt++) {
+      const cells = cellsFor(Math.floor(Math.random()*100),SIZES[s],Math.random()<.5);
+      if (fits(fleet,s,cells)) {
+        fleet[s] = cells;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) return SIZES.map((size,i) => cellsFor(i*20,size,false));
+  }
+  return fleet;
+}
+
+function validFleet(fleet) {
+  if (!Array.isArray(fleet) || fleet.length !== 5) return false;
+  const used = new Set();
+  for (let s = 0; s < 5; s++) {
+    if (!Array.isArray(fleet[s]) || fleet[s].length !== SIZES[s]) return false;
+    const cells = fleet[s].slice().sort((a,b) => a-b);
+    for (const cell of cells) {
+      if (!Number.isInteger(cell) || cell < 0 || cell > 99 || used.has(cell)) return false;
+      used.add(cell);
+    }
+    const horizontal = Math.floor(cells[0]/10) === Math.floor(cells.at(-1)/10);
+    const step = horizontal ? 1 : 10;
+    for (let i = 1; i < cells.length; i++) {
+      if (cells[i] - cells[i-1] !== step) return false;
+    }
+  }
+  return true;
+}
+
+function shipAt(fleet,index) {
+  return fleet ? fleet.findIndex(ship => ship.includes(index)) : -1;
+}
+function isSunk(ship,shots) {
+  return ship.length > 0 && ship.every(cell => shots[cell] === 2);
+}
+function shipsLeft(fleet,shots) {
+  return fleet ? fleet.filter(ship => !isSunk(ship,shots)).length : 5;
+}
+
+// ------------------------------------------------------------
+// Guided placement
+// ------------------------------------------------------------
+function savePlacement() {
+  undoStack.push({
+    draft:copy(draft), manual, selectedShip, vertical
+  });
+  if (undoStack.length > 40) undoStack.shift();
+}
+
+function selectShip(index) {
+  if (!canArrange()) return;
+  manual = true;
+  selectedShip = index;
+  const cells = draft[index];
+  anchor = cells.length ? cells[0] : -1;
+  if (cells.length > 1) vertical = cells[1] - cells[0] === 10;
+  renderPlacement();
+  renderBoards();
+}
+
+function preview() {
+  if (!manual || selectedShip < 0 || anchor < 0) {
+    return {cells:[],valid:false,reason:""};
+  }
+  const cells = cellsFor(anchor,SIZES[selectedShip],vertical);
+  if (!cells) {
+    const r = Math.floor(anchor/10), c = anchor%10;
+    const visible = [];
+    for (let i = 0; i < SIZES[selectedShip]; i++) {
+      const rr = r + (vertical ? i : 0), cc = c + (vertical ? 0 : i);
+      if (rr < 10 && cc < 10) visible.push(rr*10+cc);
+    }
+    return {cells:visible,valid:false,reason:"Too close to the edge. Move the preview or rotate."};
+  }
+  if (!fits(draft,selectedShip,cells)) {
+    return {cells,valid:false,reason:"Ships overlap here. Choose another starting square."};
+  }
+  return {cells,valid:true,reason:""};
+}
+
+function confirmPlacement() {
+  if (!canArrange()) return;
+  const p = preview();
+  if (!p.valid) return;
+  savePlacement();
+  const placed = selectedShip;
+  draft[placed] = p.cells.slice();
+  selectedShip = draft.findIndex(ship => ship.length === 0);
+  anchor = -1;
+  wakeAudio();
+  sound("place");
+  render();
+  if (selectedShip < 0) toast("All five ships placed. Press Fleet ready!");
+}
+
+function rotatePreview() {
+  if (!canArrange() || !manual || selectedShip < 0) return;
+  vertical = !vertical;
+  wakeAudio();
+  sound("select");
+  renderPlacement();
+  renderBoards();
+}
+
+function chooseOwnSquare(index) {
+  if (!canArrange()) return;
+  if (!manual || selectedShip < 0) {
+    const ship = shipAt(draft,index);
+    if (ship >= 0) selectShip(ship);
+    else toast("Choose a ship from the tray first.");
+    return;
+  }
+  anchor = index;
+  wakeAudio();
+  sound("select");
+  renderPlacement();
+  renderBoards();
+}
+
+function renderPlacement() {
+  if (!view) return;
+  const arranging = canArrange();
+  const placing = view.phase === "place" && !view.ready[seat];
+  const count = draft.filter(ship => ship.length).length;
+  $("placement").hidden = !placing;
+  $("readyRow").hidden = !placing;
+  $("manualControls").hidden = !manual;
+  $("manualButton").textContent = manual ? "Start over" : "Place manually";
+  $("manualButton").disabled = !arranging;
+  $("shuffleButton").disabled = !arranging;
+  $("undoButton").disabled = !arranging || !undoStack.length;
+  $("placementProgress").value = count;
+  $("placementTitle").textContent = !manual ? "Your suggested fleet is ready" :
+    count === 5 ? "All five ships are placed" : count + " of 5 ships placed";
+  $("placementIntro").textContent = !manual ?
+    "Keep it, shuffle it, or place your own ships." :
+    count === 5 ? "Press Fleet ready, or choose a ship to move it." :
+    "Tap water to preview. Rotate if needed. Then confirm.";
+
+  shipButtons.forEach((button,i) => {
+    button.disabled = !arranging;
+    button.className = "ship-chip" +
+      (draft[i].length ? " placed" : "") +
+      (i === selectedShip ? " selected" : "");
+    button.querySelector("small").textContent = draft[i].length ? "Placed ✓" : SIZES[i] + " squares";
+    button.setAttribute("aria-pressed",String(i === selectedShip));
+  });
+
+  const p = preview();
+  $("placementStatus").className = anchor < 0 ? "" : p.valid ? "good" : "bad";
+  $("placementStatus").textContent = selectedShip < 0 ?
+    "Fleet complete. Choose any ship above if you want to reposition it." :
+    anchor < 0 ? "Next: " + NAMES[selectedShip] + ". Tap its starting square on the board." :
+    p.valid ? "✓ " + NAMES[selectedShip] + " fits at " + coord(anchor) + ". Confirm below." :
+    "✕ " + p.reason;
+
+  $("rotateButton").disabled = !arranging || selectedShip < 0;
+  $("rotateButton").textContent = vertical ? "Rotate ↕" : "Rotate ↔";
+  $("rotateButton").title = "Rotate preview — keyboard shortcut R";
+  $("placeButton").disabled = !arranging || !p.valid;
+  $("placeButton").textContent = selectedShip < 0 ? "All ships placed ✓" :
+    (draft[selectedShip].length ? "Move " : "Place ") + NAMES[selectedShip];
+
+  $("readyButton").disabled = !arranging || !validFleet(draft);
+  $("readyButton").classList.toggle("complete",validFleet(draft));
+  $("readyButton").textContent = pending ? "Sending fleet…" :
+    !validFleet(draft) ? "Place all 5 ships to continue" :
+    manual ? "Fleet ready — start battle" : "Use this fleet — ready";
+}
+
+// ------------------------------------------------------------
+// Procedural audio
+// ------------------------------------------------------------
+function updateVolume() {
+  if (audio && master) {
+    master.gain.setTargetAtTime(soundEnabled ? volume : 0,audio.currentTime,.02);
+  }
+}
+
+function wakeAudio() {
+  if (!soundEnabled) return false;
+  try {
+    const AudioClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioClass) return false;
+    if (!audio || audio.state === "closed") {
+      audio = new AudioClass();
+      master = audio.createGain();
+      const compressor = audio.createDynamicsCompressor();
+      compressor.threshold.value = -14;
+      compressor.ratio.value = 8;
+      master.connect(compressor);
+      compressor.connect(audio.destination);
+      noiseBuffer = audio.createBuffer(1,audio.sampleRate,audio.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i=0;i<data.length;i++) data[i] = Math.random()*2-1;
+    }
+    updateVolume();
+    if (audio.state !== "running") audio.resume().catch(() => {});
+    return true;
+  } catch (_) { return false; }
+}
+
+function tone(frequency,duration,delay=0,type="sine",finish=null,level=.12) {
+  if (!soundEnabled || !audio || audio.state !== "running" || document.hidden) return;
+  try {
+    const t = audio.currentTime+delay;
+    const oscillator = audio.createOscillator(), gain = audio.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency,t);
+    if (finish) oscillator.frequency.exponentialRampToValueAtTime(finish,t+duration);
+    gain.gain.setValueAtTime(.0001,t);
+    gain.gain.exponentialRampToValueAtTime(level,t+.012);
+    gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    oscillator.connect(gain);
+    gain.connect(master);
+    oscillator.start(t);
+    oscillator.stop(t+duration+.03);
+    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+  } catch (_) {}
+}
+
+function noise(duration,cutoff,finish,level=.2,type="lowpass",delay=0) {
+  if (!soundEnabled || !audio || audio.state !== "running" || document.hidden) return;
+  try {
+    const t = audio.currentTime+delay;
+    const source = audio.createBufferSource(), filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    source.buffer = noiseBuffer;
+    filter.type = type;
+    filter.frequency.setValueAtTime(cutoff,t);
+    filter.frequency.exponentialRampToValueAtTime(finish,t+duration);
+    gain.gain.setValueAtTime(.0001,t);
+    gain.gain.exponentialRampToValueAtTime(level,t+.015);
+    gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(master);
+    source.start(t);
+    source.stop(t+duration+.03);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
+  } catch (_) {}
+}
+
+function sound(kind) {
+  if (kind === "select") tone(760,.065,0,"sine",1080,.07);
+  if (kind === "place") {
+    tone(340,.09,0,"triangle",600,.09);
+    tone(790,.11,.08,"sine",null,.07);
+  }
+  if (kind === "launch") {
+    noise(.16,1600,250,.19,"bandpass");
+    tone(160,.48,0,"triangle",530,.1);
+  }
+  if (kind === "miss") {
+    noise(.4,2300,350,.2,"bandpass");
+    tone(740,.24,0,"sine",220,.07);
+  }
+  if (kind === "hit") {
+    noise(.5,2200,110,.3);
+    tone(110,.45,0,"triangle",30,.19);
+  }
+  if (kind === "sunk") {
+    noise(.9,2200,65,.36);
+    tone(95,.85,0,"triangle",22,.2);
+    [330,247,165].forEach((f,i) => tone(f,.24,.15+i*.13,"triangle"));
+  }
+  if (kind === "turn") {
+    [660,880,1320].forEach((f,i) => tone(f,.16,i*.12,"sine",null,.1));
+  }
+  if (kind === "ready") {
+    tone(440,.15);
+    tone(660,.2,.13);
+  }
+  if (kind === "win") {
+    [523,659,784,1047,784,1047].forEach((f,i) =>
+      tone(f,.28,i*.14,"triangle",null,.14));
+  }
+  if (kind === "lose") {
+    [392,330,294,196].forEach((f,i) => tone(f,.35,i*.18,"triangle",null,.12));
+  }
+}
+
+// ------------------------------------------------------------
+// Effects. Flight contains NO hit/miss information.
+// ------------------------------------------------------------
+function finishActiveFlight() {
+  if (activeFlightAnimation) {
+    try { activeFlightAnimation.finish(); } catch (_) {
+      try { activeFlightAnimation.cancel(); } catch (_) {}
+    }
+  }
+}
+
+function updateEffects() {
+  document.body.classList.toggle("no-fx",!fxOn());
+  $("effectsButton").textContent = fxOn() ? "Effects on" : "Effects off";
+  $("effectsButton").setAttribute("aria-pressed",String(fxOn()));
+  if (!fxOn()) {
+    finishActiveFlight();
+    $("ownFx").replaceChildren();
+    $("enemyFx").replaceChildren();
+    $("celebration").replaceChildren();
+  }
+}
+
+function animateAndRemove(element,keyframes,options) {
+  if (!element.animate || !fxOn() || document.hidden) {
+    element.remove();
+    return;
+  }
+  const animation = element.animate(keyframes,options);
+  animation.finished.then(() => element.remove(),() => element.remove());
+}
+
+function effectPoint(event) {
+  const own = event.player !== seat;
+  const cell = (own ? ownCells : enemyCells)[event.index];
+  const shell = $(own ? "ownShell" : "enemyShell");
+  const layer = $(own ? "ownFx" : "enemyFx");
+  const r = cell.getBoundingClientRect(), b = shell.getBoundingClientRect();
+  return {
+    layer,shell,cell,
+    x:r.left-b.left+r.width/2,
+    y:r.top-b.top+r.height/2,
+    width:b.width,height:b.height
+  };
+}
+
+function ring(layer,x,y,color,scale=5,duration=800) {
+  if (!fxOn() || document.hidden) return;
+  const element = document.createElement("i");
+  element.className = "fx-ring";
+  Object.assign(element.style,{
+    left:x+"px",top:y+"px",borderColor:color
+  });
+  layer.appendChild(element);
+  animateAndRemove(element,[
+    {transform:"translate(-50%,-50%) scale(.2)",opacity:.9},
+    {transform:"translate(-50%,-50%) scale("+scale+")",opacity:0}
+  ],{duration,easing:"ease-out"});
+}
+
+async function fly(event) {
+  sound("launch");
+  if (!fxOn() || document.hidden) return;
+
+  const p = effectPoint(event);
+  if (!p.layer.animate) return;
+
+  const shell = document.createElement("i");
+  shell.className = "fx-shell";
+  p.layer.appendChild(shell);
+
+  const sx = p.width*.5, sy = p.height-7;
+  const dx = p.x-sx, dy = p.y-sy;
+  const arc = Math.min(80,Math.max(35,p.height*.18));
+  const frames = [];
+
+  for (let i=0;i<=36;i++) {
+    const t = i/36;
+    const x = sx+dx*t;
+    const y = sy+dy*t-Math.sin(Math.PI*t)*arc;
+    const direction = Math.atan2(dy-Math.PI*arc*Math.cos(Math.PI*t),dx);
+    frames.push({
+      offset:t,
+      transform:"translate("+(x-11)+"px,"+(y-3)+"px) rotate("+direction+"rad)",
+      opacity:1
+    });
+  }
+
+  ring(p.layer,sx,sy,"#ffe3a1",2.6,260);
+  const animation = shell.animate(frames,{
+    duration:FLIGHT_MS,easing:"linear",fill:"forwards"
+  });
+  activeFlightAnimation = animation;
+
+  try {
+    // The result state cannot be rendered until this promise resolves.
+    await animation.finished;
+  } catch (_) {
+    // Cancellation on leaving, hiding, or disabling effects is intentional.
+  } finally {
+    shell.remove();
+    if (activeFlightAnimation === animation) activeFlightAnimation = null;
+  }
+}
+
+function impactEffects(event) {
+  sound(event.sunk >= 0 ? "sunk" : event.hit ? "hit" : "miss");
+  if (!fxOn() || document.hidden) return;
+
+  const p = effectPoint(event);
+  const color = event.hit ? "#ffd488" : "#9aecff";
+  const count = event.sunk >= 0 ? 42 : event.hit ? 25 : 19;
+
+  ring(p.layer,p.x,p.y,color,event.sunk >= 0 ? 8 : 4.5);
+  if (!event.hit) {
+    later(() => ring(p.layer,p.x,p.y,"#81cce5",6,1000),140,view.round);
+  }
+  if (event.sunk >= 0) {
+    later(() => ring(p.layer,p.x,p.y,"#ffb18b",10,1000),140,view.round);
+  }
+
+  for (let i=0;i<count;i++) {
+    const angle = Math.random()*Math.PI*2;
+    const distance = 20+Math.random()*(event.sunk >= 0 ? 140 : 80);
+    const spark = document.createElement("i");
+    spark.className = "fx-spark";
+    const c = event.hit && i%3 === 0 ? "#ff9168" : color;
+    Object.assign(spark.style,{
+      left:p.x+"px",top:p.y+"px",background:c,
+      boxShadow:"0 0 7px "+c,
+      width:(!event.hit ? 3 : 5)+"px",
+      height:(!event.hit ? 10 : 5)+"px"
+    });
+    p.layer.appendChild(spark);
+    animateAndRemove(spark,[
+      {transform:"translate(0,0) scale(1)",opacity:1},
+      {
+        transform:"translate("+(Math.cos(angle)*distance)+"px,"+
+          (Math.sin(angle)*distance+(event.hit ? 30 : 15))+"px) scale(.2)",
+        opacity:0
+      }
+    ],{duration:650+Math.random()*350,easing:"cubic-bezier(.15,.65,.35,1)"});
+  }
+
+  if (event.hit) {
+    for (let i=0;i<7;i++) {
+      const smoke = document.createElement("i");
+      smoke.className = "fx-smoke";
+      Object.assign(smoke.style,{
+        left:(p.x-9+Math.random()*15-7)+"px",
+        top:(p.y-9)+"px"
+      });
+      p.layer.appendChild(smoke);
+      animateAndRemove(smoke,[
+        {transform:"translate(0,0) scale(.4)",opacity:0},
+        {offset:.2,opacity:.45},
+        {transform:"translate("+(Math.random()*50-25)+"px,-85px) scale(2.8)",opacity:0}
+      ],{duration:1250+Math.random()*400,delay:i*55,easing:"ease-out"});
+    }
+    const shake = p.shell.animate([
+      {transform:"translateX(0)"},
+      {transform:"translateX(-3px)"},
+      {transform:"translateX(3px)"},
+      {transform:"translateX(-2px)"},
+      {transform:"translateX(0)"}
+    ],{duration:270});
+    shake.finished.catch(() => {});
+  }
+
+  const word = document.createElement("div");
+  word.className = "fx-word";
+  word.textContent = event.sunk >= 0 ? "SHIP SUNK!" : event.hit ? "DIRECT HIT!" : "SPLASH";
+  Object.assign(word.style,{
+    left:(Math.max(96,Math.min(p.width-96,p.x))-95)+"px",
+    top:Math.max(36,p.y-8)+"px",color
+  });
+  p.layer.appendChild(word);
+  animateAndRemove(word,[
+    {transform:"translateY(0) scale(.85)",opacity:0},
+    {offset:.15,transform:"translateY(-10px) scale(1)",opacity:1},
+    {offset:.7,opacity:1},
+    {transform:"translateY(-50px) scale(1.05)",opacity:0}
+  ],{duration:1200,easing:"ease-out"});
+}
+
+function confetti() {
+  if (!fxOn() || document.hidden) return;
+  const colors = ["#ffdb89","#77f3de","#effaff","#a6c0ff","#ffb39d"];
+  for (let i=0;i<80;i++) {
+    const piece = document.createElement("i");
+    piece.className = "confetti";
+    Object.assign(piece.style,{
+      left:Math.random()*100+"%",
+      top:(-20-Math.random()*180)+"px",
+      background:colors[i%colors.length]
+    });
+    $("celebration").appendChild(piece);
+    animateAndRemove(piece,[
+      {transform:"translate(0,0) rotate(0)",opacity:1},
+      {transform:"translate("+(Math.random()*220-110)+"px,"+
+        (innerHeight+250)+"px) rotate("+(Math.random()*900)+"deg)",opacity:0}
+    ],{duration:2300+Math.random()*650,easing:"cubic-bezier(.2,.5,.65,1)"});
+  }
+}
+
+// ------------------------------------------------------------
+// Board construction and rendering
+// ------------------------------------------------------------
+function buildBoard(id,cells,own) {
+  const board = $(id);
+  const axis = text => {
+    const element = document.createElement("div");
+    element.className = "axis";
+    element.textContent = text;
+    board.appendChild(element);
+  };
+  axis("");
+  for (const letter of LETTERS) axis(letter);
+
+  for (let r=0;r<10;r++) {
+    axis(r+1);
+    for (let c=0;c<10;c++) {
+      const index = r*10+c;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cell";
+      button.disabled = true;
+      button.dataset.index = index;
+      const mark = document.createElement("span");
+      mark.setAttribute("aria-hidden","true");
+      button.appendChild(mark);
+
+      button.addEventListener("click",() => {
+        if (own) chooseOwnSquare(index);
+        else if (canShoot() && !view.enemyShots[index]) {
+          target = index;
+          wakeAudio();
+          sound("select");
+          render();
+        }
+      });
+
+      if (own) {
+        button.addEventListener("pointerenter",event => {
+          if (event.pointerType !== "mouse" || !canArrange() ||
+              !manual || selectedShip < 0) return;
+          anchor = index;
+          renderPlacement();
+          renderBoards();
+        });
+      }
+      board.appendChild(button);
+      cells.push(button);
+    }
+  }
+}
+
+function paintBoard(cells,fleet,shots,own) {
+  const p = own && canArrange() ? preview() : {cells:[],valid:false};
+  for (let i=0;i<100;i++) {
+    const button = cells[i], ship = shipAt(fleet,i);
+    const hit = shots[i] === 2, miss = shots[i] === 1;
+    const destroyed = ship >= 0 && isSunk(fleet[ship],shots);
+    const revealed = !own && view.phase === "over" && ship >= 0 && !hit;
+    const aimed = !own && target === i && canShoot();
+    const previewed = p.cells.includes(i);
+    const incoming = view.phase === "flight" && view.flight &&
+      view.flight.index === i && (own ? view.flight.player !== seat : view.flight.player === seat);
+
+    button.className = "cell" +
+      (ship >= 0 ? " hull" : "") +
+      (own && canArrange() && manual && ship === selectedShip && ship >= 0 ? " selected-hull" : "") +
+      (miss ? " miss" : "") + (hit ? " hit" : "") +
+      (destroyed ? " sunk" : "") + (revealed ? " revealed" : "") +
+      (aimed ? " aimed" : "") + (incoming ? " incoming" : "") +
+      (previewed ? p.valid ? " preview-good" : " preview-bad" : "");
+
+    button.firstChild.textContent = previewed ? p.valid ? "▰" : "!" :
+      hit ? "×" : miss ? "•" : revealed ? "◆" : ship >= 0 ? "▰" :
+      aimed || incoming ? "+" : "";
+
+    button.disabled = own ? !canArrange() : !canShoot() || shots[i] !== 0;
+    let label = destroyed ? "sunk ship" : hit ? "hit" : miss ? "miss" :
+      ship >= 0 ? NAMES[ship] + (revealed ? ", revealed survivor" : "") :
+      own ? "empty water" : "unknown water";
+    if (previewed) label += p.valid ? ", valid placement preview" : ", invalid placement preview";
+    if (incoming) label += ", shell incoming";
+    if (aimed) label += ", selected target";
+    button.setAttribute("aria-label",coord(i)+": "+label);
+    button.title = coord(i)+": "+label;
+  }
+}
+
+function renderBoards() {
+  if (!view) return;
+  paintBoard(ownCells,view.ownFleet || draft,view.ownShots,true);
+  paintBoard(enemyCells,view.enemyFleet,view.enemyShots,false);
+}
+
+function describe(event) {
+  return (event.player === seat ? "You" : opponentName()) +
+    " → " + coord(event.index) + ": " +
+    (event.sunk >= 0 ? NAMES[event.sunk]+" sunk!" : event.hit ? "direct hit." : "miss.");
+}
+
+function cardState(player) {
+  if (!connected) return "OFFLINE";
+  if (view.phase === "place") return view.ready[player] ? "READY" : "DEPLOYING";
+  if (view.phase === "over") return view.winner === player ? "ROUND WINNER" : "FLEET LOST";
+  if (view.phase === "flight") return view.flight.player === player ? "SHELL IN FLIGHT" : "INCOMING";
+  return view.turn === player ? "SHOOTING" : "WAITING";
+}
+
+function renderScoreboard() {
+  const s = view.series, other = 1-seat;
+  $("roundLabel").textContent = "Round "+view.round;
+  $("opponentName").textContent = opponentName().toUpperCase();
+
+  [{prefix:"my",player:seat},{prefix:"their",player:other}].forEach(({prefix,player}) => {
+    $(prefix+"Wins").textContent = s.wins[player];
+    $(prefix+"Shots").textContent = s.shots[player];
+    $(prefix+"Hits").textContent = s.hits[player];
+    $(prefix+"Accuracy").textContent = percentage(s.hits[player],s.shots[player]);
+    $(prefix+"Streak").textContent = s.streak[player];
+    $(prefix+"Foot").textContent = "Ships sunk: "+s.sinks[player]+" · Best streak: "+s.best[player];
+    $(prefix+"State").textContent = cardState(player);
+    $(prefix+"Card").className = "score-card" +
+      (connected && view.phase === "battle" && view.turn === player ? " active" : "") +
+      (view.phase === "over" && view.winner === player ? " winner" : "");
+  });
+
+  const mine = s.wins[seat], theirs = s.wins[other];
+  $("seriesLead").textContent = mine === theirs ?
+    (mine ? "Series tied "+mine+"–"+theirs+"." : "A fresh series. Make the first win yours.") :
+    mine > theirs ? "You lead "+mine+"–"+theirs+"." :
+    opponentName()+" leads "+theirs+"–"+mine+".";
+
+  $("exportButton").disabled = !s.history.length;
+  $("historySummary").textContent = "Match history · "+s.history.length+" completed"+
+    (s.history.length > 20 ? " · latest 20 shown" : "");
+  $("historyEmpty").hidden = !!s.history.length;
+  $("historyTableWrap").hidden = !s.history.length;
+  $("historyBody").replaceChildren();
+
+  s.history.slice(0,20).forEach(match => {
+    const row = document.createElement("tr");
+    [
+      match.round,match.winner === seat ? "WIN" : "LOSS",
+      match.hits[seat]+"/"+match.shots[seat],
+      match.hits[other]+"/"+match.shots[other]
+    ].forEach((value,index) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      if (index === 1) cell.className = match.winner === seat ? "result-win" : "result-loss";
+      row.appendChild(cell);
+    });
+    $("historyBody").appendChild(row);
+  });
+}
+
+function render() {
+  if (!view) return;
+  const placing = view.phase === "place", over = view.phase === "over";
+  const flight = view.phase === "flight";
+  let title,detail,icon,style = "";
+
+  if (!connected) {
+    title = "CONNECTION LOST";
+    detail = "Your displayed results are preserved. Export them before leaving.";
+    icon = "!";
+    style = "lost";
+  } else if (placing) {
+    title = view.ready[seat] ? "FLEET READY" : "DEPLOY YOUR FLEET";
+    detail = view.ready[seat] ? "Waiting for the other captain." :
+      "Use the suggested fleet or place your ships manually.";
+    if (view.ready[1-seat] && !view.ready[seat]) detail += " Your opponent is ready.";
+    if (pending) detail = "Sending your fleet…";
+    icon = "⚓";
+  } else if (flight) {
+    title = view.flight.player === seat ? "SHELL IN FLIGHT…" : "INCOMING SHELL…";
+    detail = "Target "+coord(view.flight.index)+". Awaiting impact — hold fire.";
+    icon = "➜";
+    style = "flight";
+  } else if (over) {
+    title = view.winner === seat ? "VICTORY!" : "FLEET LOST";
+    detail = "Round "+view.round+" complete. Your series score is saved in this room.";
+    icon = view.winner === seat ? "★" : "⚓";
+    style = view.winner === seat ? "won" : "lost";
+  } else if (pending) {
+    title = "FIRING ORDER SENT";
+    detail = "Waiting for launch confirmation…";
+    icon = "➜";
+    style = "wait";
+  } else if (view.turn === seat) {
+    title = "YOUR TURN — FIRE!";
+    detail = target >= 0 ? "Target "+coord(target)+" locked. Press FIRE." :
+      "Tap an enemy square, then press FIRE.";
+    icon = "⌖";
+    style = "mine";
+  } else {
+    title = opponentName().toUpperCase()+"'S TURN";
+    detail = "Hold fire. Your opponent is choosing a target.";
+    icon = "◷";
+    style = "wait";
+  }
+
+  $("turnBanner").className = "turn-banner "+style;
+  $("turnTitle").textContent = title;
+  $("turnDetail").textContent = detail;
+  $("turnIcon").textContent = icon;
+  $("jumpButton").hidden = !canShoot();
+  document.title = canShoot() ? "YOUR TURN · Deep Blue" : "Deep Blue — Naval Duel";
+  $("sessionLabel").textContent = (mode === "solo" ? "Solo patrol" : "Room "+room)+
+    (connected ? " · Connected" : " · Disconnected");
+  $("networkWarning").hidden = connected && !slowConnection;
+  $("networkWarning").textContent = connected ?
+    "Waiting for the other device. Keep both pages open and both devices awake." : disconnectReason;
+
+  renderScoreboard();
+  renderPlacement();
+  renderBoards();
+
+  $("boards").className = "boards"+(placing ? " placing" : "")+(over ? " over" : "");
+  $("enemyPanel").classList.toggle("firing",canShoot());
+  $("enemyHeading").textContent = canShoot() ? "⌖ Enemy waters — SHOOT HERE" : "Enemy waters";
+  $("ownCount").textContent = placing && !view.ready[seat] ?
+    draft.filter(ship => ship.length).length+" / 5 placed" : view.ownLeft+" ships afloat";
+  $("enemyCount").textContent = view.enemyLeft+" ships afloat";
+
+  $("fireButton").disabled = !canShoot() || target < 0 ||
+    (target >= 0 && view.enemyShots[target] !== 0);
+  $("fireButton").textContent = flight ? "IN FLIGHT" :
+    pending && !placing && !over ? "SENDING…" :
+    target >= 0 ? "FIRE "+coord(target) : "FIRE";
+  $("targetLabel").textContent = flight ? "No result until the shell lands." :
+    over ? "Fleet positions declassified." :
+    target >= 0 ? "⌖ Target locked: "+coord(target) :
+    canShoot() ? "Your shot! Choose a square." : "Hold fire.";
+
+  $("resultPanel").hidden = !over;
+  if (over) {
+    const won = view.winner === seat;
+    $("resultMedal").textContent = won ? "🏆" : "⚓";
+    $("resultTitle").textContent = won ? "Ocean secured, Captain." : "A battle lost. Not the war.";
+    let message = won ? "Enemy fleet destroyed." : "Enemy survivors are revealed in gold.";
+    if (won && view.series.streak[seat] >= 2) message += " "+view.series.streak[seat]+" wins in a row!";
+    if (mode !== "solo") {
+      message += view.rematch[seat] ? " Waiting for your opponent to accept." :
+        view.rematch[1-seat] ? " Your opponent wants a rematch." :
+        " Request a rematch to keep this connection and scoreboard.";
+    }
+    $("resultDetail").textContent = message;
+  }
+  $("rematchButton").disabled = !connected || !!pending || view.rematch[seat];
+  $("rematchButton").textContent = view.rematch[seat] ? "Waiting for opponent…" :
+    pending && over ? "Requesting…" :
+    mode !== "solo" && view.rematch[1-seat] ? "Accept rematch" : "New game";
+
+  $("battleLog").replaceChildren();
+  if (!view.history.length) {
+    const item = document.createElement("li");
+    item.textContent = placing ? "Preparing a fresh patrol." : "No confirmed impacts yet.";
+    $("battleLog").appendChild(item);
+  }
+  view.history.forEach(event => {
+    const item = document.createElement("li");
+    item.textContent = describe(event);
+    $("battleLog").appendChild(item);
+  });
+}
+
+// ------------------------------------------------------------
+// Presentation queue:
+// A resolved state stays queued until that device's shell lands.
+// ------------------------------------------------------------
+function commitView(next) {
+  const newRound = !view || next.round !== view.round;
+  const hadView = !!view;
+  if (newRound) {
+    draft = randomFleet();
+    manual = false;
+    selectedShip = -1;
+    anchor = -1;
+    vertical = false;
+    target = -1;
+    undoStack = [];
+    $("ownFx").replaceChildren();
+    $("enemyFx").replaceChildren();
+    $("celebration").replaceChildren();
+  }
+  view = next;
+  if (pending && next.ack >= pending.request) pending = null;
+  if (next.phase !== "battle" || next.turn !== seat ||
+      (target >= 0 && next.enemyShots[target])) target = -1;
+
+  $("lobby").hidden = true;
+  $("game").hidden = false;
+  render();
+
+  if (newRound && hadView) {
+    toast("Round "+next.round+" — fresh fleets, same scoreboard!");
+    sound("ready");
+  }
+}
+
+function acceptView(next) {
+  if (!next || !Number.isInteger(next.revision) ||
+      next.revision <= receivedRevision || next.me !== seat) return;
+  receivedRevision = next.revision;
+  clearTimeout(networkTimer);
+  presentationQueue.push(next);
+  pumpPresentation();
+}
+
+async function pumpPresentation() {
+  if (presenting) return;
+  presenting = true;
+  const token = epoch;
+
+  try {
+    while (presentationQueue.length && token === epoch) {
+      const next = presentationQueue.shift();
+      const previous = view;
+
+      if (next.phase === "flight" && next.flight && next.flight.id > flownEvent) {
+        // This state has no hit/miss result, updated score, or new log entry.
+        commitView(next);
+        await fly(next.flight);
+        if (token !== epoch) return;
+        flownEvent = next.flight.id;
+        continue;
+      }
+
+      const event = next.lastEvent;
+      const freshImpact = next.phase !== "flight" && event && event.id > shownEvent;
+      const sameRound = previous && previous.round === next.round;
+
+      // A resync may deliver a result without its earlier launch message.
+      // Reconstruct the flight using the OLD view, never the result view.
+      if (freshImpact && sameRound && event.id > flownEvent) {
+        commitView({
+          ...previous,
+          phase:"flight",
+          flight:{id:event.id,player:event.player,index:event.index}
+        });
+        await fly(event);
+        if (token !== epoch) return;
+        flownEvent = event.id;
+      }
+
+      // Only here can a hit, miss, sunk ship, score, or victory appear.
+      commitView(next);
+
+      if (freshImpact) {
+        shownEvent = event.id;
+        if (sameRound) {
+          impactEffects(event);
+          if (next.phase !== "over") toast(describe(event));
+        }
+      }
+
+      const becameMyTurn = next.phase === "battle" && next.turn === seat &&
+        (!previous || previous.phase !== "battle" ||
+         previous.turn !== seat || previous.round !== next.round);
+
+      if (becameMyTurn) {
+        later(() => {
+          if (!canShoot()) return;
+          sound("turn");
+          toast("YOUR TURN — choose a target and FIRE!");
+        },freshImpact ? 500 : 80,next.round);
+      } else if (previous && previous.phase === "place" && next.phase === "battle") {
+        sound("ready");
+        toast("Battle stations! "+opponentName()+" fires first.");
+      }
+
+      if (next.phase === "over" && celebratedRound !== next.round) {
+        celebratedRound = next.round;
+        later(() => {
+          if (next.winner === seat) {
+            confetti();
+            sound("win");
+            toast("VICTORY! Another win on the scoreboard.",4000);
+          } else {
+            sound("lose");
+            toast("Fleet lost. Enemy survivors are revealed in gold.",4000);
+          }
+        },550,next.round);
+      }
+    }
+  } catch (error) {
+    report(error);
+  } finally {
+    if (token === epoch) {
+      presenting = false;
+      render();
+      if (presentationQueue.length) pumpPresentation();
+    }
+  }
+}
+
+// ------------------------------------------------------------
+// Host-authoritative state. Launch and impact are separate phases.
+// ------------------------------------------------------------
+function makeView(player) {
+  const other = 1-player;
+  const enemyFleet = state.fleets[other] || emptyFleet();
+  return {
+    revision,me:player,ack:acknowledgements[player],
+    round:state.round,phase:state.phase,turn:state.turn,winner:state.winner,
+    ready:state.ready.slice(),rematch:state.rematch.slice(),
+    flight:state.flight ? {...state.flight} : null,
+    ownFleet:state.fleets[player] ? copy(state.fleets[player]) : null,
+    enemyFleet:enemyFleet.map(ship =>
+      state.phase === "over" || isSunk(ship,state.shots[other]) ? ship.slice() : []),
+    ownShots:state.shots[player].slice(),
+    enemyShots:state.shots[other].slice(),
+    ownLeft:shipsLeft(state.fleets[player],state.shots[player]),
+    enemyLeft:shipsLeft(state.fleets[other],state.shots[other]),
+    series:copy(series),history:copy(state.history),
+    lastEvent:state.lastEvent ? {...state.lastEvent} : null
+  };
+}
+
+function send(packet) {
+  if (!connection || !connection.open) {
+    connectionLost("The other device is no longer connected.");
+    return false;
+  }
+  try {
+    connection.send({...packet,app:APP});
+    return true;
+  } catch (_) {
+    connectionLost("The connection could not send data.");
+    return false;
+  }
+}
+
+function publish() {
+  if (!state) return;
+  revision++;
+  acceptView(makeView(0));
+  if (mode === "host" && connected) send({type:"state",view:makeView(1)});
+  scheduleComputer();
+}
+
+function beginRound() {
+  clearTimeout(aiTimer);
+  clearTimeout(impactTimer);
+  aiTimer = impactTimer = 0;
+  const number = state ? state.round+1 : 1;
+  state = {
+    round:number,phase:"place",turn:(number-1)%2,winner:null,
+    fleets:[null,null],shots:[emptyShots(),emptyShots()],
+    ready:[false,false],rematch:[false,false],
+    roundShots:[0,0],roundHits:[0,0],
+    flight:null,lastEvent:null,history:[]
+  };
+  if (mode === "solo") {
+    state.fleets[1] = randomFleet();
+    state.ready[1] = true;
+  }
+  publish();
+}
+
+function launchShot(player,index) {
+  const event = {id:++eventNumber,player,index};
+  state.phase = "flight";
+  state.flight = event;
+  publish();
+
+  const token = epoch, round = state.round;
+  impactTimer = setTimeout(() => {
+    impactTimer = 0;
+    if (token !== epoch || !state || state.round !== round ||
+        state.phase !== "flight" || state.flight.id !== event.id) return;
+
+    const other = 1-player;
+    const ship = shipAt(state.fleets[other],index);
+    const hit = ship >= 0;
+
+    // No damage or statistics are changed before this impact step.
+    state.shots[other][index] = hit ? 2 : 1;
+    state.roundShots[player]++;
+    series.shots[player]++;
+    if (hit) {
+      state.roundHits[player]++;
+      series.hits[player]++;
+    }
+
+    const destroyed = hit && isSunk(state.fleets[other][ship],state.shots[other]);
+    if (destroyed) series.sinks[player]++;
+
+    const result = {...event,hit,sunk:destroyed ? ship : -1};
+    state.lastEvent = result;
+    state.history.unshift(result);
+    state.history = state.history.slice(0,10);
+    state.flight = null;
+
+    if (shipsLeft(state.fleets[other],state.shots[other]) === 0) {
+      state.phase = "over";
+      state.winner = player;
+      series.wins[player]++;
+      series.streak[player]++;
+      series.streak[other] = 0;
+      series.best[player] = Math.max(series.best[player],series.streak[player]);
+      series.history.unshift({
+        round:state.round,winner:player,
+        shots:state.roundShots.slice(),hits:state.roundHits.slice()
+      });
+    } else {
+      state.phase = "battle";
+      state.turn = other;
+    }
+    publish();
+  },FLIGHT_MS);
+}
+
+function hostAction(player,action) {
+  if (!connected || !state || !action ||
+      !Number.isInteger(action.request) || action.request < 1 ||
+      action.request > 1000000000) return;
+
+  // Retried packets never count as a second shot or a second win.
+  if (action.request <= acknowledgements[player]) {
+    if (player === 1 && mode === "host") send({type:"state",view:makeView(1)});
+    return;
+  }
+  acknowledgements[player] = action.request;
+  if (action.round !== state.round) { publish(); return; }
+
+  if (action.type === "ready" && state.phase === "place" &&
+      !state.ready[player] && validFleet(action.fleet)) {
+    state.fleets[player] = copy(action.fleet);
+    state.ready[player] = true;
+    if (state.ready[0] && state.ready[1]) state.phase = "battle";
+
+  } else if (action.type === "shot" && state.phase === "battle" &&
+      state.turn === player && Number.isInteger(action.index) &&
+      action.index >= 0 && action.index < 100 &&
+      state.shots[1-player][action.index] === 0) {
+    launchShot(player,action.index);
+    return;
+
+  } else if (action.type === "rematch" && state.phase === "over") {
+    state.rematch[player] = true;
+    if (mode === "solo") state.rematch[1] = true;
+    if (state.rematch[0] && state.rematch[1]) {
+      beginRound();
+      return;
+    }
+  }
+  publish();
+}
+
+function dispatch(action) {
+  if (!view || !connected || pending) return;
+  wakeAudio();
+  action = {...action,round:view.round,request:++requestNumber};
+  pending = action;
+  pendingSince = lastRetry = Date.now();
+  if (action.type === "ready") sound("ready");
+  render();
+  if (mode === "guest") send({type:"action",action});
+  else hostAction(0,action);
+}
+
+// ------------------------------------------------------------
+// Computer opponent: targets known hits, not intact ship positions.
+// ------------------------------------------------------------
+function computerTarget() {
+  const shots = state.shots[0];
+  const destroyed = new Set();
+  state.fleets[0].forEach(ship => {
+    if (isSunk(ship,shots)) ship.forEach(cell => destroyed.add(cell));
+  });
+  const neighbors = new Set();
+  for (let i=0;i<100;i++) {
+    if (shots[i] !== 2 || destroyed.has(i)) continue;
+    const adjacent = [];
+    if (i%10 > 0) adjacent.push(i-1);
+    if (i%10 < 9) adjacent.push(i+1);
+    if (i >= 10) adjacent.push(i-10);
+    if (i < 90) adjacent.push(i+10);
+    adjacent.forEach(cell => { if (!shots[cell]) neighbors.add(cell); });
+  }
+  let choices = [...neighbors];
+  if (!choices.length) choices = shots.map((_,i)=>i).filter(i =>
+    !shots[i] && (Math.floor(i/10)+i%10)%2 === 0);
+  if (!choices.length) choices = shots.map((_,i)=>i).filter(i => !shots[i]);
+  return choices[Math.floor(Math.random()*choices.length)];
+}
+
+function scheduleComputer() {
+  if (mode !== "solo" || !connected || !state ||
+      state.phase !== "battle" || state.turn !== 1 || aiTimer) return;
+  const token = epoch, round = state.round;
+  aiTimer = setTimeout(() => {
+    aiTimer = 0;
+    if (token !== epoch || !state || state.round !== round ||
+        state.phase !== "battle" || state.turn !== 1) return;
+    hostAction(1,{
+      type:"shot",index:computerTarget(),round,
+      request:acknowledgements[1]+1
+    });
+  },1000+Math.random()*400);
+}
+
+// ------------------------------------------------------------
+// Session and networking
+// ------------------------------------------------------------
+function lobbyMessage(message,error=false) {
+  $("connectionMessage").textContent = message;
+  $("connectionMessage").className = error ? "error" : "";
+}
+function setBusy(value) {
+  busy = value;
+  $("createButton").disabled = value;
+  $("showJoinButton").disabled = value;
+  $("connectButton").disabled = value;
+  $("joinCode").disabled = value;
+  $("cancelButton").hidden = !value;
+}
+
+function resetSession() {
+  epoch++;
+  clearTimeout(networkTimer);
+  clearTimeout(reconnectTimer);
+  clearTimeout(aiTimer);
+  clearTimeout(impactTimer);
+  clearTimeout(toastTimer);
+  aiTimer = impactTimer = 0;
+  if (activeFlightAnimation) {
+    try { activeFlightAnimation.cancel(); } catch (_) {}
+    activeFlightAnimation = null;
+  }
+
+  const oldConnection = connection, oldPeer = peer;
+  connection = peer = null;
+  connected = false;
+  try { if (oldConnection) oldConnection.close(); } catch (_) {}
+  try { if (oldPeer) oldPeer.destroy(); } catch (_) {}
+
+  mode = ""; room = ""; seat = 0;
+  state = view = null;
+  series = freshSeries();
+  revision = eventNumber = receivedRevision = requestNumber = 0;
+  acknowledgements = [0,0];
+  pending = null;
+  target = -1;
+  presentationQueue = [];
+  presenting = false;
+  flownEvent = shownEvent = celebratedRound = 0;
+  slowConnection = false;
+  disconnectReason = "";
+  $("ownFx").replaceChildren();
+  $("enemyFx").replaceChildren();
+  $("celebration").replaceChildren();
+  $("toast").hidden = true;
+  $("game").hidden = true;
+  $("lobby").hidden = false;
+  $("roomPane").hidden = true;
+  $("joinPane").hidden = true;
+  document.title = "Deep Blue — Naval Duel";
+  setBusy(false);
+}
+
+function networkFailure(message) {
+  resetSession();
+  lobbyMessage(message,true);
+}
+function connectionLost(message) {
+  if (!mode || mode === "solo") return;
+  if (!view) { networkFailure(message); return; }
+  connected = false;
+  pending = null;
+  disconnectReason = message;
+  render();
+}
+
+function generateCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(6);
+  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+  else for (let i=0;i<6;i++) bytes[i] = Math.floor(Math.random()*256);
+  return Array.from(bytes,b => alphabet[b%alphabet.length]).join("");
+}
+
+function loadPeerLibrary(callback) {
+  if (typeof window.Peer === "function") { callback(null); return; }
+  libraryCallbacks.push(callback);
+  if (libraryLoading) return;
+  libraryLoading = true;
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js",
+    "https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"
+  ];
+  let index = 0;
+
+  function finish(error) {
+    libraryLoading = false;
+    const callbacks = libraryCallbacks.slice();
+    libraryCallbacks = [];
+    callbacks.forEach(fn => fn(error));
+  }
+  function attempt() {
+    if (index >= urls.length) {
+      finish(new Error("Could not load online play. Check your internet connection or play solo."));
+      return;
+    }
+    const script = document.createElement("script");
+    let settled = false, timeout;
+    script.src = urls[index++];
+    script.async = true;
+    function complete(success) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      script.onload = script.onerror = null;
+      if (success && typeof window.Peer === "function") finish(null);
+      else { script.remove(); attempt(); }
+    }
+    script.onload = () => complete(true);
+    script.onerror = () => complete(false);
+    timeout = setTimeout(() => complete(false),10000);
+    document.head.appendChild(script);
+  }
+  attempt();
+}
+
+function rejectConnection(incoming,message) {
+  incoming.on("error",() => {});
+  incoming.on("open",() => {
+    try { incoming.send({app:APP,type:"reject",message}); } catch (_) {}
+    setTimeout(() => { try { incoming.close(); } catch (_) {} },400);
+  });
+}
+
+function bindConnection(incoming,hosting,token) {
+  connection = incoming;
+  const current = () => token === epoch && incoming === connection;
+
+  incoming.on("open",() => {
+    if (!current()) return;
+    connected = true;
+    lastHeard = Date.now();
+    clearTimeout(networkTimer);
+    if (hosting) beginRound();
+    else {
+      lobbyMessage("Connected. Receiving the game board…");
+      send({type:"sync"});
+      if (!view) networkTimer = setTimeout(() => {
+        if (current() && !view) networkFailure("No board arrived. Make sure both devices use this version.");
+      },15000);
+    }
+  });
+
+  incoming.on("data",data => {
+    if (!current() || !data || data.app !== APP) return;
+    lastHeard = Date.now();
+    if (slowConnection) {
+      slowConnection = false;
+      render();
+    }
+    if (data.type === "reject") networkFailure(String(data.message || "Room unavailable."));
+    else if (data.type === "ping") send({type:"pong"});
+    else if (data.type === "pong") return;
+    else if (hosting && data.type === "action") hostAction(1,data.action);
+    else if (hosting && data.type === "sync" && state) send({type:"state",view:makeView(1)});
+    else if (!hosting && data.type === "state") acceptView(data.view);
+  });
+
+  incoming.on("close",() => {
+    if (current()) connectionLost("Your opponent left or the data connection ended.");
+  });
+  incoming.on("error",() => {
+    if (current()) connectionLost("The peer connection reported a network error.");
+  });
+}
+
+function startNetwork(hosting,code) {
+  resetSession();
+  const token = epoch;
+  mode = hosting ? "host" : "guest";
+  seat = hosting ? 0 : 1;
+  room = hosting ? generateCode() : code;
+  setBusy(true);
+  lobbyMessage(hosting ? "Opening your room…" : "Finding your friend's room…");
+
+  loadPeerLibrary(error => {
+    if (token !== epoch) return;
+    if (error) { networkFailure(error.message); return; }
+    if (!window.RTCPeerConnection && !window.webkitRTCPeerConnection) {
+      networkFailure("Online play is unavailable here. Try a current browser or play solo.");
+      return;
+    }
+
+    let instance;
+    try {
+      instance = new window.Peer(hosting ? PREFIX+room : undefined,{debug:0});
+    } catch (failure) {
+      networkFailure("Could not start online play: "+failure.message);
+      return;
+    }
+    peer = instance;
+    networkTimer = setTimeout(() => {
+      if (token === epoch && !view) networkFailure("Connection timed out. Check the code and keep both pages open.");
+    },30000);
+
+    instance.on("open",() => {
+      if (token !== epoch || peer !== instance) return;
+      if (hosting) {
+        clearTimeout(networkTimer);
+        $("roomCode").value = room;
+        $("roomPane").hidden = false;
+        lobbyMessage("Room ready. Waiting for your opponent…");
+      } else if (!connection) {
+        try {
+          const outgoing = instance.connect(PREFIX+room,{
+            reliable:true,serialization:"json",metadata:{app:APP}
+          });
+          bindConnection(outgoing,false,token);
+        } catch (_) {
+          networkFailure("Could not contact that room. Check the code and try again.");
+        }
+      }
+    });
+
+    instance.on("connection",incoming => {
+      if (token !== epoch || peer !== instance) { incoming.close(); return; }
+      if (!hosting || connection || state) {
+        rejectConnection(incoming,"This room already has two players.");
+        return;
+      }
+      if (!incoming.metadata || incoming.metadata.app !== APP) {
+        rejectConnection(incoming,"Both players must use the same Impact edition file.");
+        return;
+      }
+      bindConnection(incoming,true,token);
+      networkTimer = setTimeout(() => {
+        if (token === epoch && !view) networkFailure("The player connection did not finish. Please create a new room.");
+      },30000);
+    });
+
+    instance.on("error",failure => {
+      if (token !== epoch || peer !== instance) return;
+      if (connected && connection && connection.open && !instance.destroyed) {
+        toast("Lobby service interrupted. Your active game can continue.");
+        return;
+      }
+      const messages = {
+        "unavailable-id":"That room code is already in use. Create a game again.",
+        "peer-unavailable":"Room not found. Check the code and update both devices.",
+        "browser-incompatible":"This browser cannot make the online connection. Try another browser or solo play.",
+        "network":"Cannot reach the connection service. Check your internet connection.",
+        "webrtc":"The devices could not establish a direct connection. Try another network."
+      };
+      const message = messages[failure.type] || "Connection error: "+(failure.message || failure.type);
+      if (view) connectionLost(message);
+      else networkFailure(message);
+    });
+
+    instance.on("disconnected",() => {
+      if (token !== epoch || peer !== instance || instance.destroyed) return;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        if (token === epoch && peer === instance && instance.disconnected && !instance.destroyed) {
+          try { instance.reconnect(); } catch (_) {}
+        }
+      },1500);
+    });
+
+    instance.on("close",() => {
+      if (token === epoch && peer === instance) connectionLost("The online session ended.");
+    });
+  });
+}
+
+// ------------------------------------------------------------
+// CSV export
+// ------------------------------------------------------------
+function exportScoreboard() {
+  if (!view || !view.series.history.length) return;
+  const s = view.series, other = 1-seat;
+  const lines = [
+    "Deep Blue Series Scoreboard","",
+    "Player,Wins,Shots,Hits,Accuracy,Ships sunk,Current win streak,Best win streak"
+  ];
+  [{name:"You",player:seat},{name:opponentName(),player:other}].forEach(({name,player}) => {
+    lines.push([
+      name,s.wins[player],s.shots[player],s.hits[player],
+      percentage(s.hits[player],s.shots[player]),s.sinks[player],
+      s.streak[player],s.best[player]
+    ].join(","));
+  });
+  lines.push("","Round,Winner,Your shots,Your hits,Enemy shots,Enemy hits");
+  s.history.slice().reverse().forEach(match => {
+    lines.push([
+      match.round,match.winner === seat ? "You" : opponentName(),
+      match.shots[seat],match.hits[seat],match.shots[other],match.hits[other]
+    ].join(","));
+  });
+  lines.push("","Shot totals include confirmed impacts in the current round.");
+  const blob = new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob), link = document.createElement("a");
+  link.href = url;
+  link.download = "deep-blue-scoreboard.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url),30000);
+}
+
+// ------------------------------------------------------------
+// Controls
+// ------------------------------------------------------------
+buildBoard("ownBoard",ownCells,true);
+buildBoard("enemyBoard",enemyCells,false);
+
+NAMES.forEach((name,index) => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ship-chip";
+  const label = document.createElement("span");
+  label.textContent = name;
+  const miniature = document.createElement("span");
+  miniature.className = "miniature";
+  miniature.setAttribute("aria-hidden","true");
+  for (let i=0;i<SIZES[index];i++) miniature.appendChild(document.createElement("i"));
+  const status = document.createElement("small");
+  button.append(label,miniature,status);
+  button.addEventListener("click",() => selectShip(index));
+  $("shipPicker").appendChild(button);
+  shipButtons.push(button);
+});
+
+$("manualButton").addEventListener("click",() => {
+  if (!canArrange()) return;
+  if (manual && draft.some(ship => ship.length) &&
+      !confirm("Clear your current layout and place the ships again? You can Undo this.")) return;
+  savePlacement();
+  draft = emptyFleet();
+  manual = true;
+  selectedShip = 0;
+  anchor = -1;
+  vertical = false;
+  render();
+  toast("Start with the Carrier. Tap water to preview its position.");
+});
+
+$("shuffleButton").addEventListener("click",() => {
+  if (!canArrange()) return;
+  savePlacement();
+  draft = randomFleet();
+  manual = false;
+  selectedShip = -1;
+  anchor = -1;
+  wakeAudio();
+  sound("place");
+  render();
+});
+
+$("undoButton").addEventListener("click",() => {
+  if (!canArrange() || !undoStack.length) return;
+  const old = undoStack.pop();
+  draft = copy(old.draft);
+  manual = old.manual;
+  selectedShip = old.selectedShip;
+  vertical = old.vertical;
+  anchor = -1;
+  render();
+  toast("Last layout change undone.");
+});
+
+$("rotateButton").addEventListener("click",rotatePreview);
+$("placeButton").addEventListener("click",confirmPlacement);
+
+$("ownPanel").addEventListener("keydown",event => {
+  if (!canArrange() || !manual) return;
+  if (event.key.toLowerCase() === "r") {
+    event.preventDefault();
+    rotatePreview();
+    return;
+  }
+  const cell = event.target.closest(".cell");
+  if (!cell) return;
+  const index = Number(cell.dataset.index);
+  let next = index;
+  if (event.key === "ArrowLeft" && index%10 > 0) next--;
+  else if (event.key === "ArrowRight" && index%10 < 9) next++;
+  else if (event.key === "ArrowUp" && index >= 10) next-=10;
+  else if (event.key === "ArrowDown" && index < 90) next+=10;
+  else return;
+  event.preventDefault();
+  ownCells[next].focus();
+  if (selectedShip >= 0) {
+    anchor = next;
+    renderPlacement();
+    renderBoards();
+  }
+});
+
+$("readyButton").addEventListener("click",() => {
+  if (canArrange() && validFleet(draft)) dispatch({type:"ready",fleet:copy(draft)});
+});
+$("fireButton").addEventListener("click",() => {
+  if (canShoot() && target >= 0 && !view.enemyShots[target]) {
+    dispatch({type:"shot",index:target});
+  }
+});
+$("rematchButton").addEventListener("click",() => {
+  if (view && view.phase === "over" && !view.rematch[seat]) dispatch({type:"rematch"});
+});
+$("jumpButton").addEventListener("click",() => {
+  $("enemyPanel").scrollIntoView({behavior:fxOn() ? "smooth" : "auto",block:"start"});
+});
+$("exportButton").addEventListener("click",exportScoreboard);
+
+$("createButton").addEventListener("click",() => {
+  wakeAudio();
+  startNetwork(true);
+});
+$("showJoinButton").addEventListener("click",() => {
+  if (busy) return;
+  $("joinPane").hidden = !$("joinPane").hidden;
+  if (!$("joinPane").hidden) $("joinCode").focus();
+});
+$("joinForm").addEventListener("submit",event => {
+  event.preventDefault();
+  if (busy) return;
+  const code = $("joinCode").value.toUpperCase().replace(/[\s-]/g,"");
+  if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) {
+    lobbyMessage("Enter the six-character code. Codes do not contain I, O, 0, or 1.",true);
+    return;
+  }
+  wakeAudio();
+  startNetwork(false,code);
+});
+$("soloButton").addEventListener("click",() => {
+  resetSession();
+  mode = "solo";
+  seat = 0;
+  connected = true;
+  wakeAudio();
+  beginRound();
+});
+$("cancelButton").addEventListener("click",() => {
+  resetSession();
+  lobbyMessage("Cancelled. Create a room, join a friend, or play solo.");
+});
+$("copyButton").addEventListener("click",() => {
+  const value = $("roomCode").value;
+  const selectCode = () => {
+    $("roomCode").focus();
+    $("roomCode").select();
+    $("roomCode").setSelectionRange(0,value.length);
+    toast("Select and copy the room code.");
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(value).then(() => toast("Room code copied.")).catch(selectCode);
+  } else selectCode();
+});
+$("leaveButton").addEventListener("click",() => {
+  if (!confirm("Leave this series? The connection and scoreboard will be cleared. Export your scores first if you want to keep them.")) return;
+  resetSession();
+  lobbyMessage("Ready for a fresh series.");
+});
+
+$("soundButton").addEventListener("click",() => {
+  soundEnabled = !soundEnabled;
+  if (soundEnabled && !wakeAudio()) {
+    soundEnabled = false;
+    toast("Sound is unavailable in this browser.");
+  }
+  updateVolume();
+  $("soundButton").textContent = soundEnabled ? "Sound on" : "Sound off";
+  $("soundButton").setAttribute("aria-pressed",String(soundEnabled));
+  if (soundEnabled) later(() => sound("turn"),120);
+});
+$("volumeSlider").addEventListener("input",() => {
+  volume = Number($("volumeSlider").value)/100;
+  wakeAudio();
+  updateVolume();
+});
+$("effectsButton").addEventListener("click",() => {
+  if (motionPreference.matches) {
+    effectsEnabled = false;
+    toast("Animations are disabled by your device's Reduce Motion preference.");
+  } else effectsEnabled = !effectsEnabled;
+  updateEffects();
+});
+if (motionPreference.addEventListener) {
+  motionPreference.addEventListener("change",updateEffects);
+} else if (motionPreference.addListener) {
+  motionPreference.addListener(updateEffects);
+}
+document.addEventListener("pointerdown",() => {
+  if (soundEnabled) wakeAudio();
+},{passive:true});
+document.addEventListener("keydown",() => {
+  if (soundEnabled) wakeAudio();
+});
+
+addEventListener("resize",finishActiveFlight);
+
+document.addEventListener("visibilitychange",() => {
+  if (document.hidden) {
+    // Do not leave the presentation queue waiting on a background animation.
+    finishActiveFlight();
+    return;
+  }
+  if (!connected || !connection || !connection.open) return;
+  lastHeard = Date.now();
+  slowConnection = false;
+  if (mode === "guest") {
+    send({type:"sync"});
+    if (pending) send({type:"action",action:pending});
+  }
+  render();
+});
+
+setInterval(() => {
+  if (!connected || mode === "solo" || !connection) return;
+  if (!connection.open) {
+    connectionLost("The data connection is no longer open.");
+    return;
+  }
+  send({type:"ping"});
+  const now = Date.now();
+  const slow = now-lastHeard > 20000 || (!!pending && now-pendingSince > 12000);
+  if (slow !== slowConnection) {
+    slowConnection = slow;
+    render();
+  }
+  if (mode === "guest" && pending && now-lastRetry > 4000) {
+    lastRetry = now;
+    send({type:"action",action:pending});
+  }
+},5000);
+
+updateEffects();
+lobbyMessage("Ready. Create a room, join a friend, or challenge the computer.");
+})();
+</script>
+</body>
+</html>
